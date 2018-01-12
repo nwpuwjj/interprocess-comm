@@ -8,36 +8,55 @@
 #include <errno.h>
 
 #define MAXLINE 256
-//pipe[0]===read
-//pipe[1]===write
+
+#define FIFO1 "/tmp/fifo.1"
+#define FIFO2 "/tmp/fifo.2"
+#define FILE_MODE (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)  //default permissions for new fles
+
 void client(int,int),server(int,int);
 
 int main(int argc, char **argv)
 {
-    int pipe1[2],pipe2[2];
+    int readfd,writefd;
     
     pid_t childpid;
-
-    //create two pipes
-    pipe(pipe1); 
-    pipe(pipe2);
-
+    
+    //create two FIFOs; ok if they already exist 
+    if((mkfifo(FIFO1,FILE_MODE) <0) && (errno != EEXIST))
+    {
+        printf("[%s]===can't create %s===\n",FIFO1);
+        return 2;
+    }
+    if((mkfifo(FIFO2,FILE_MODE)<0) &&(errno !=EEXIST))
+    {
+        unlink(FIFO1);
+        printf("[%s]===can't create %s===\n",FIFO2);
+        return 2;
+    }
+    
     //child
     if((childpid=fork())==0)
     {
-        close(pipe1[1]);
-        close(pipe2[0]);
-        server(pipe1[0],pipe2[1]);
+        readfd=open(FIFO1,O_RDONLY,0);
+        writefd=open(FIFO2,O_WRONLY,0);
+        
+        server(readfd,writefd);
         exit(0);
-    } 
+    }
 
     //parent
-    close(pipe1[0]);
-    close(pipe2[1]);
+    writefd=open(FIFO1,O_WRONLY,0);
+    readfd=open(FIFO2,O_RDONLY,0);
 
-    client(pipe2[0],pipe1[1]);
+    client(readfd,writefd);
 
     waitpid(childpid,NULL,0);  //wait for child to terminate
+
+    close(readfd);
+    close(writefd);
+
+    unlink(FIFO1);
+    unlink(FIFO2);
 
     exit(0);
 }

@@ -8,36 +8,28 @@
 #include <errno.h>
 
 #define MAXLINE 256
-//pipe[0]===read
-//pipe[1]===write
-void client(int,int),server(int,int);
+
+#define FIFO1 "/tmp/fifo.1"
+#define FIFO2 "/tmp/fifo.2"
+#define FILE_MODE (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)  //default permissions for new fles
+
+void client(int,int);
 
 int main(int argc, char **argv)
 {
-    int pipe1[2],pipe2[2];
+    int readfd,writefd;
     
-    pid_t childpid;
+    writefd=open(FIFO1,O_WRONLY,0);
+    readfd=open(FIFO2,O_RDONLY,0);
 
-    //create two pipes
-    pipe(pipe1); 
-    pipe(pipe2);
+    client(readfd,writefd);
 
-    //child
-    if((childpid=fork())==0)
-    {
-        close(pipe1[1]);
-        close(pipe2[0]);
-        server(pipe1[0],pipe2[1]);
-        exit(0);
-    } 
 
-    //parent
-    close(pipe1[0]);
-    close(pipe2[1]);
+    close(readfd);
+    close(writefd);
 
-    client(pipe2[0],pipe1[1]);
-
-    waitpid(childpid,NULL,0);  //wait for child to terminate
+    unlink(FIFO1);
+    unlink(FIFO2);
 
     exit(0);
 }
