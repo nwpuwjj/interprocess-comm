@@ -15,6 +15,8 @@
 #include <pthread.h>
 #include <sys/ipc.h>
 #include <pthread.h>
+#include <time.h>
+#include <sys/time.h>
 
 #define MAXLINE 256
 
