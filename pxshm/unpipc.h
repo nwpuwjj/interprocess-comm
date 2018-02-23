@@ -15,7 +15,7 @@
 #include <pthread.h>
 #include <sys/ipc.h>
 #include <pthread.h>
-#include<semaphore.h>
+#include <semaphore.h>
 #include <sys/sem.h>
 #include <sys/mman.h>
 
